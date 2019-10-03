@@ -33,6 +33,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #define NO_SCORE std::numeric_limits<double>::infinity()
 
@@ -40,6 +41,7 @@ using GTFError = std::runtime_error;
 
 const std::regex valid_gtf_line_regex{"^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\d([\\t\\s]\\S+\\s\"?[^\\s\\t\"]+\"?;)*$"};
 
+// Represents a line in a GTF file
 struct GTFSequence {
     std::string seqname;    // sequence name
     std::string source;     // source
@@ -57,65 +59,34 @@ struct GTFSequence {
     }
 };
 
+// Used to open and use GTF files.
+// General usage:
+//   1. Supply a filename with the constructor (or use setfilename())
+//   2. Load the file with load()
+//   3. Read through the file with a for loop:
+//        for (GTFSequence& seq : mygtffile) {...}
 class GTFFile {
     public:
-        GTFFile(const std::string& filename): infile(filename) {
-            if (!infile) {
-                throw GTFError("Error opening GTF file");
-            }
-        }
+        GTFFile() {}
+        GTFFile(const std::string& filename): file(filename) {}
 
-        ~GTFFile() {
-            infile.close();
-        }
+        // set the filename (call this before load() if you used the
+        // default constructor)
+        void setfilename(const std::string& filename) { file = filename; }
 
-        void close() {
-            infile.close();
-        }
+        // loads the file's data into memory
+        // requires filename to be set with either the constructor or setfilename()
+        void load();
 
-        // Gets the next sequence and returns true or returns false if none
-        // are left to be gotten.
-        bool next_sequence(GTFSequence& out_seq) {
-            std::string line;
-            std::stringstream ss;
-            while (std::getline(infile, line)) {
-                sanitize_line(line);
-                if (!valid_line(line)) {
-                    continue;
-                } else {
-                    ss = std::stringstream(line);
-                    std::string tmpscore;
-                    ss >> out_seq.seqname
-                        >> out_seq.source
-                        >> out_seq.feature
-                        >> out_seq.start
-                        >> out_seq.end
-                        >> tmpscore // check this afterwards
-                        >> out_seq.strand
-                        >> out_seq.frame;
-                    if (tmpscore == ".") {
-                        out_seq.score = NO_SCORE;
-                    } else {
-                        out_seq.score = std::atof(tmpscore.c_str());
-                    }
-
-                    out_seq.attributes.clear();
-                    // get the attributes if any
-                    std::string tmpkey, tmpval;
-                    while (ss >> tmpkey) {
-                        std::getline(ss, tmpval, ';');
-                        out_seq.attributes[tmpkey] = sanitize_attr_value(tmpval);
-                    }
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        // Make this class iterable by wrapping the vector's iterators
+        std::vector<GTFSequence>::iterator begin() { return sequences.begin(); }
+        std::vector<GTFSequence>::iterator end() { return sequences.end(); }
 
     private:
-        std::ifstream infile;
+        std::string file;
+        std::vector<GTFSequence> sequences;
+
+        bool next_sequence(std::ifstream&, GTFSequence&);
 
         static inline std::string& trim(std::string& str) {
             if (str.empty()) return str;
@@ -165,4 +136,58 @@ class GTFFile {
         }
 };
 
+void GTFFile::load() {
+    std::ifstream infile(file);
+    if (!infile) {
+        throw GTFError("Error opening GTF file " + file + "!");
+    }
+
+    GTFSequence tmpseq;
+    while (next_sequence(infile, tmpseq)) {
+        sequences.push_back(tmpseq);
+    }
+
+    infile.close();
+
+    sequences.shrink_to_fit(); // save memory
+}
+
+bool GTFFile::next_sequence(std::ifstream& infile, GTFSequence& out_seq) {
+    std::string line;
+    std::stringstream ss;
+    while (std::getline(infile, line)) {
+        sanitize_line(line);
+        if (!valid_line(line)) {
+            continue;
+        } else {
+            ss = std::stringstream(line);
+            std::string tmpscore;
+            ss >> out_seq.seqname
+                >> out_seq.source
+                >> out_seq.feature
+                >> out_seq.start
+                >> out_seq.end
+                >> tmpscore // check this afterwards
+                >> out_seq.strand
+                >> out_seq.frame;
+            if (tmpscore == ".") {
+                out_seq.score = NO_SCORE;
+            } else {
+                out_seq.score = std::atof(tmpscore.c_str());
+            }
+
+            out_seq.attributes.clear();
+            // get the attributes if any
+            std::string tmpkey, tmpval;
+            while (ss >> tmpkey) {
+                std::getline(ss, tmpval, ';');
+                out_seq.attributes[tmpkey] = sanitize_attr_value(tmpval);
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
 #endif /* _GTF_H */

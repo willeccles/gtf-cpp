@@ -9,21 +9,20 @@ int main(void) {
     }
 
     GTFFile testgtf("test.gtf");
+    testgtf.load();
 
-    GTFSequence tempseq;
-    for (int i = 1; testgtf.next_sequence(tempseq); i++) {
-        std::cout << "Sequence " << i << ":\n";
-        std::cout << tempseq.seqname << ' ';    // sequence name
-        std::cout << tempseq.source << ' ';     // source
-        std::cout << tempseq.feature << ' ';    // feature
-        std::cout << tempseq.start << ' ';      // start
-        std::cout << tempseq.end << ' ';        // end
-        std::cout << tempseq.score << ' ';      // either a score or NO_SCORE if a .
-        std::cout << tempseq.strand << ' ';     // + or -
-        std::cout << tempseq.frame << '\n';     // frame (0, 1, 2)
+    for (auto& gtfseq : testgtf) {
+        std::cout << gtfseq.seqname << ' ';    // sequence name
+        std::cout << gtfseq.source << ' ';     // source
+        std::cout << gtfseq.feature << ' ';    // feature
+        std::cout << gtfseq.start << ' ';      // start
+        std::cout << gtfseq.end << ' ';        // end
+        std::cout << gtfseq.score << ' ';      // either a score or NO_SCORE if a .
+        std::cout << gtfseq.strand << ' ';     // + or -
+        std::cout << gtfseq.frame << '\n';     // frame (0, 1, 2)
 
-        for (auto& p : tempseq.attributes) {
-            std::cout << p.first << ": " << p.second << '\n';
+        for (auto& [key, val] : gtfseq.attributes) {
+            std::cout << key << ": " << val << '\n';
         }
 
         std::cout << '\n';
