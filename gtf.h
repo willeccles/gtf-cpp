@@ -33,13 +33,17 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
-#include <string_view>
 
-#define NO_SCORE std::numeric_limits<double>::infinity
+#define NO_SCORE std::numeric_limits<double>::infinity()
+
+using GTFError = std::runtime_error;
+
+const std::regex valid_gtf_line_regex{"^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\d([\\t\\s]\\S+\\s\"?[^\\s\\t\"]+\"?;)*$"};
 
 struct GTFSequence {
     std::string seqname;    // sequence name
     std::string source;     // source
+    std::string feature;    // feature
     std::size_t start;      // start
     std::size_t end;        // end
     double      score;      // either a score or NO_SCORE if a .
@@ -57,13 +61,21 @@ class GTFFile {
     public:
         GTFFile(const std::string& filename): infile(filename) {
             if (!infile) {
-                throw std::runtime_error("Error opening GTF file");
+                throw GTFError("Error opening GTF file");
             }
+        }
+
+        ~GTFFile() {
+            infile.close();
+        }
+
+        void close() {
+            infile.close();
         }
 
         // Gets the next sequence and returns true or returns false if none
         // are left to be gotten.
-        bool next_sequence(GTFSequence& out_seq) const {
+        bool next_sequence(GTFSequence& out_seq) {
             std::string line;
             std::stringstream ss;
             while (std::getline(infile, line)) {
@@ -75,6 +87,7 @@ class GTFFile {
                     std::string tmpscore;
                     ss >> out_seq.seqname
                         >> out_seq.source
+                        >> out_seq.feature
                         >> out_seq.start
                         >> out_seq.end
                         >> tmpscore // check this afterwards
@@ -83,16 +96,15 @@ class GTFFile {
                     if (tmpscore == ".") {
                         out_seq.score = NO_SCORE;
                     } else {
-                        out_seq.score = std::atof(tmpscore);
+                        out_seq.score = std::atof(tmpscore.c_str());
                     }
 
                     out_seq.attributes.clear();
                     // get the attributes if any
-                    std::string tmpattr, tmpkey, tmpval;
-                    while (std::getline(ss, tmpattr, ';')) {
-                        std::getline(tmpattr, tmpkey, '\t');
-                        std::getline(tmpattr, tmpval);
-                        out_seq.attributes.insert(tmpattr, tmpval);
+                    std::string tmpkey, tmpval;
+                    while (ss >> tmpkey) {
+                        std::getline(ss, tmpval, ';');
+                        out_seq.attributes[tmpkey] = sanitize_attr_value(tmpval);
                     }
 
                     return true;
@@ -105,27 +117,51 @@ class GTFFile {
     private:
         std::ifstream infile;
 
-        const static std::basic_regex valid_line_regex("^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\d(\\t\\S+\\t\\S+)*$");
-        
-        static inline std::string& sanitize_line(std::string& line) {
-            // get rid of comments
-            // TODO maybe make this not find '#' characters that are in strings
-            if (line.find_first_of('#') != line.npos()) {
-                line.erase(line.find_first_of('#'), line.length() - 1);
-            }
-            
+        static inline std::string& trim(std::string& str) {
+            if (str.empty()) return str;
+
             // trim the right side
-            line.erase(line.find_last_not_of(" \t") + 1);
+            str.erase(str.find_last_not_of(" \t") + 1);
 
             // trim the left side
-            line.erase(0, line.find_first_not_of(" \t"));
+            str.erase(0, str.find_first_not_of(" \t"));
+
+            // return reference to str
+            return str;
+        }
+        
+        static inline std::string& sanitize_line(std::string& line) {
+            if (line.empty()) return line;
+
+            // get rid of comments
+            std::size_t hashpos = line.find_first_of('#');
+            if (hashpos != line.npos) {
+                line.erase(hashpos, line.size() - 1);
+            }
+
+            trim(line);
 
             // we sanitized the line in place, but return a reference anyway
             return line;
         }
 
+        static inline std::string& sanitize_attr_value(std::string& value) {
+            trim(value);
+            if (value.empty()) return value;
+
+            if (value[0] == '"') {
+                value.erase(0, 1);
+            }
+
+            if (value[value.size()-1] == '"') {
+                value.erase(value.size()-1);
+            }
+
+            return value;
+        }
+
         static inline bool valid_line(const std::string& line) {
-            return std::regex_search(line, valid_line_regex);
+            return std::regex_search(line, valid_gtf_line_regex);
         }
 };
 
