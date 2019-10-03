@@ -7,4 +7,7 @@ These are the steps to open, load, and iterate through a GTF file:
   4. Use a range-based for-loop to iterate through the file, retrieving
      each line as a GTFSequence (excluding comments and other invalid lines)
 
+Extra functions:
+  - You can get a filtered list of sequences from the file with the filter function
+
 For a more specific code example, see test/test.cpp.
