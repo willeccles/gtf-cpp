@@ -34,12 +34,13 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <functional>
 
 #define NO_SCORE std::numeric_limits<double>::infinity()
 
 using GTFError = std::runtime_error;
 
-const std::regex valid_gtf_line_regex{"^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\d([\\t\\s]\\S+\\s\"?[^\\s\\t\"]+\"?;)*$"};
+const std::regex valid_gtf_line_regex{"^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\d([\\t\\s]\\S+\\s\"?[^\\s\\t\"]+\"?;)*\\s*$"};
 
 // Represents a line in a GTF file
 struct GTFSequence {
@@ -78,6 +79,10 @@ class GTFFile {
         // requires filename to be set with either the constructor or setfilename()
         void load();
 
+        // return a list of GTFSequences filtered by the given function.
+        // this function can be a lambda: [](GTFSequence& gtfseq) -> bool {...}
+        std::vector<GTFSequence> filter(std::function<bool(GTFSequence&)> filterfunc);
+
         // Make this class iterable by wrapping the vector's iterators
         std::vector<GTFSequence>::iterator begin() { return sequences.begin(); }
         std::vector<GTFSequence>::iterator end() { return sequences.end(); }
@@ -107,6 +112,20 @@ void GTFFile::load() {
     infile.close();
 
     sequences.shrink_to_fit(); // save memory
+}
+
+std::vector<GTFSequence> GTFFile::filter(std::function<bool(GTFSequence&)> filterfunc) {
+    std::vector<GTFSequence> filtered;
+
+    for (auto s : sequences) {
+        if (filterfunc(s)) {
+            filtered.push_back(s);
+        }
+    }
+
+    filtered.shrink_to_fit();
+
+    return filtered;
 }
 
 bool GTFFile::next_sequence(std::ifstream& infile, GTFSequence& out_seq) {
@@ -167,7 +186,7 @@ inline std::string& GTFFile::sanitize_line(std::string& line) {
     // get rid of comments
     std::size_t hashpos = line.find_first_of('#');
     if (hashpos != line.npos) {
-        line.erase(hashpos, line.size() - 1);
+        line.erase(hashpos);
     }
 
     trim(line);

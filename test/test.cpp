@@ -27,7 +27,13 @@ int main(void) {
 
         std::cout << '\n';
     }
-    
+
+    std::vector<GTFSequence> filtered = testgtf.filter([](GTFSequence& s) -> bool {
+                return s.feature == "CDS";
+            });
+
+    std::cout << "Filtered by feature == CDS there are "
+        << filtered.size() << " results.\n";
 
     return 0;
 }
