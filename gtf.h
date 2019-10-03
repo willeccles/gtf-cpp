@@ -87,53 +87,10 @@ class GTFFile {
         std::vector<GTFSequence> sequences;
 
         bool next_sequence(std::ifstream&, GTFSequence&);
-
-        static inline std::string& trim(std::string& str) {
-            if (str.empty()) return str;
-
-            // trim the right side
-            str.erase(str.find_last_not_of(" \t") + 1);
-
-            // trim the left side
-            str.erase(0, str.find_first_not_of(" \t"));
-
-            // return reference to str
-            return str;
-        }
-        
-        static inline std::string& sanitize_line(std::string& line) {
-            if (line.empty()) return line;
-
-            // get rid of comments
-            std::size_t hashpos = line.find_first_of('#');
-            if (hashpos != line.npos) {
-                line.erase(hashpos, line.size() - 1);
-            }
-
-            trim(line);
-
-            // we sanitized the line in place, but return a reference anyway
-            return line;
-        }
-
-        static inline std::string& sanitize_attr_value(std::string& value) {
-            trim(value);
-            if (value.empty()) return value;
-
-            if (value[0] == '"') {
-                value.erase(0, 1);
-            }
-
-            if (value[value.size()-1] == '"') {
-                value.erase(value.size()-1);
-            }
-
-            return value;
-        }
-
-        static inline bool valid_line(const std::string& line) {
-            return std::regex_search(line, valid_gtf_line_regex);
-        }
+        static inline std::string& trim(std::string& str);
+        static inline std::string& sanitize_line(std::string& line);
+        static inline std::string& sanitize_attr_value(std::string& value);
+        static inline bool valid_line(const std::string& line);
 };
 
 void GTFFile::load() {
@@ -190,4 +147,52 @@ bool GTFFile::next_sequence(std::ifstream& infile, GTFSequence& out_seq) {
 
     return false;
 }
+
+inline std::string& GTFFile::trim(std::string& str) {
+    if (str.empty()) return str;
+
+    // trim the right side
+    str.erase(str.find_last_not_of(" \t") + 1);
+
+    // trim the left side
+    str.erase(0, str.find_first_not_of(" \t"));
+
+    // return reference to str
+    return str;
+}
+
+inline std::string& GTFFile::sanitize_line(std::string& line) {
+    if (line.empty()) return line;
+
+    // get rid of comments
+    std::size_t hashpos = line.find_first_of('#');
+    if (hashpos != line.npos) {
+        line.erase(hashpos, line.size() - 1);
+    }
+
+    trim(line);
+
+    // we sanitized the line in place, but return a reference anyway
+    return line;
+}
+
+inline std::string& GTFFile::sanitize_attr_value(std::string& value) {
+    trim(value);
+    if (value.empty()) return value;
+
+    if (value[0] == '"') {
+        value.erase(0, 1);
+    }
+
+    if (value[value.size()-1] == '"') {
+        value.erase(value.size()-1);
+    }
+
+    return value;
+}
+
+inline bool GTFFile::valid_line(const std::string& line) {
+    return std::regex_search(line, valid_gtf_line_regex);
+}
+
 #endif /* _GTF_H */
