@@ -81,7 +81,7 @@ class GTFFile {
 
         // return a list of GTFSequences filtered by the given function.
         // this function can be a lambda: [](GTFSequence& gtfseq) -> bool {...}
-        std::vector<GTFSequence> filter(std::function<bool(GTFSequence&)> filterfunc);
+        std::vector<GTFSequence> filter(std::function<bool(GTFSequence&)> filterfunc) const;
 
         // Make this class iterable by wrapping the vector's iterators
         std::vector<GTFSequence>::iterator begin() { return sequences.begin(); }
@@ -114,7 +114,7 @@ void GTFFile::load() {
     sequences.shrink_to_fit(); // save memory
 }
 
-std::vector<GTFSequence> GTFFile::filter(std::function<bool(GTFSequence&)> filterfunc) {
+std::vector<GTFSequence> GTFFile::filter(std::function<bool(GTFSequence&)> filterfunc) const {
     std::vector<GTFSequence> filtered;
 
     for (auto s : sequences) {
