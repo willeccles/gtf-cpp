@@ -23,8 +23,8 @@
  * limitations under the License.
  */
 
-#ifndef _GTF_H
-#define _GTF_H
+#ifndef GTF_PARSER_H
+#define GTF_PARSER_H
 
 #include <cstdlib>
 #include <fstream>
@@ -36,9 +36,9 @@
 #include <vector>
 #include <functional>
 
-#define NO_SCORE std::numeric_limits<double>::infinity()
-
 using GTFError = std::runtime_error;
+
+const double NO_SCORE = std::numeric_limits<double>::infinity();
 
 const std::regex valid_gtf_line_regex{"^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\d([\\t\\s]\\S+\\s\"?[^\\s\\t\"]+\"?;)*\\s*$"};
 
@@ -214,4 +214,4 @@ inline bool GTFFile::valid_line(const std::string& line) {
     return std::regex_search(line, valid_gtf_line_regex);
 }
 
-#endif /* _GTF_H */
+#endif /* GTF_PARSER_H */
