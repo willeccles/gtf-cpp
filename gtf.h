@@ -40,7 +40,7 @@ using GTFError = std::runtime_error;
 
 const double NO_SCORE = std::numeric_limits<double>::infinity();
 
-const std::regex valid_gtf_line_regex{"^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\d([\\t\\s]\\S+\\s\"?[^\\s\\t\"]+\"?;)*\\s*$"};
+const std::regex valid_gtf_line_regex{"^\\S+\\t\\S+\\t\\S+\\t\\d+\\t\\d+\\t\\S+\\t\\S+\\t\\S+([\\s\\t]\\S+[\\s\\t]\\S+;)*"};
 
 // Represents a line in a GTF file
 struct GTFSequence {
