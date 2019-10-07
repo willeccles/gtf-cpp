@@ -7,6 +7,11 @@ BUILDING
 
 This program assumes a modern C++ compiler, preferrably compatible with C++17.
 
+TODO
+
+ - Rename GTFFile to be IGTFFile (for Input GTFFile)
+ - Add OGTFFile to be able to write GTF files
+
 LICENSE
 
 Copyright 2019 Will Eccles
