@@ -28,7 +28,7 @@ int main(void) {
         std::cout << '\n';
     }
 
-    std::vector<GTFSequence> filtered = testgtf.filter([](GTFSequence& s) -> bool {
+    std::vector<GTFSequence> filtered = testgtf.filter([](const auto& s) -> bool {
                 return s.feature == "CDS";
             });
 
