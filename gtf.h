@@ -80,7 +80,7 @@ class GTFFile {
         void load();
 
         // return a list of GTFSequences filtered by the given function.
-        // this function can be a lambda: [](auto gtfseq) -> bool {...}
+        // this function can be a lambda: [](const auto& gtfseq) -> bool {...}
         std::vector<GTFSequence> filter(std::function<bool(const GTFSequence&)> filterfunc) const;
 
         // get the number of sequences within the GTF file
