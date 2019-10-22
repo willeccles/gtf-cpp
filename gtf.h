@@ -158,7 +158,7 @@ bool GTFFile::next_sequence(std::ifstream& infile, GTFSequence& out_seq) {
             if (tmpframe == ".") {
                 out_seq.frame = -1;
             } else {
-                out_set.frame = std::atoi(tmpframe);
+                out_seq.frame = std::atoi(tmpframe.c_str());
             }
 
             out_seq.attributes.clear();
