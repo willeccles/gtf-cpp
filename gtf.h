@@ -51,7 +51,7 @@ struct GTFSequence {
     std::size_t end;        // end
     double      score;      // either a score or NO_SCORE if a .
     char        strand;     // + or -
-    short       frame;      // frame (0, 1, 2)
+    short       frame;      // frame (0, 1, 2, or -1 if .)
 
     std::map<std::string, std::string> attributes;  // any attributes to use
 
@@ -140,7 +140,7 @@ bool GTFFile::next_sequence(std::ifstream& infile, GTFSequence& out_seq) {
             continue;
         } else {
             ss = std::stringstream(line);
-            std::string tmpscore;
+            std::string tmpscore, tmpframe;
             ss >> out_seq.seqname
                 >> out_seq.source
                 >> out_seq.feature
@@ -148,11 +148,17 @@ bool GTFFile::next_sequence(std::ifstream& infile, GTFSequence& out_seq) {
                 >> out_seq.end
                 >> tmpscore // check this afterwards
                 >> out_seq.strand
-                >> out_seq.frame;
+                >> tmpframe; // check this afterwards
             if (tmpscore == ".") {
                 out_seq.score = NO_SCORE;
             } else {
                 out_seq.score = std::atof(tmpscore.c_str());
+            }
+
+            if (tmpframe == ".") {
+                out_seq.frame = -1;
+            } else {
+                out_set.frame = std::atoi(tmpframe);
             }
 
             out_seq.attributes.clear();
