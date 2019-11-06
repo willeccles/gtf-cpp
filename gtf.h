@@ -78,6 +78,8 @@ class GTFFile {
         // loads the file's data into memory
         // requires filename to be set with either the constructor or setfilename()
         void load();
+        // loads the sequences if they match the given filter function
+        void load_filter(std::function<bool(const GTFSequence&)> filterfunc);
 
         // return a list of GTFSequences filtered by the given function.
         // this function can be a lambda: [](const auto& gtfseq) -> bool {...}
@@ -89,6 +91,8 @@ class GTFFile {
         // Make this class iterable by wrapping the vector's iterators
         std::vector<GTFSequence>::iterator begin() { return sequences.begin(); }
         std::vector<GTFSequence>::iterator end() { return sequences.end(); }
+
+        std::vector<GTFSequence>& getall() { return sequences; }
 
     private:
         std::string file;
@@ -102,6 +106,10 @@ class GTFFile {
 };
 
 void GTFFile::load() {
+    load_filter([](const auto& seq) { return true; });
+}
+
+void GTFFile::load_filter(std::function<bool(const GTFSequence&)> filterfunc) {
     std::ifstream infile(file);
     if (!infile) {
         throw GTFError("Error opening GTF file " + file + "!");
@@ -109,7 +117,9 @@ void GTFFile::load() {
 
     GTFSequence tmpseq;
     while (next_sequence(infile, tmpseq)) {
-        sequences.push_back(tmpseq);
+        if (filterfunc(tmpseq)) {
+            sequences.push_back(tmpseq);
+        }
     }
 
     infile.close();
