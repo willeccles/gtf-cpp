@@ -81,6 +81,14 @@ class GTFFile {
         // loads the sequences if they match the given filter function
         void load_filter(std::function<bool(const GTFSequence&)> filterfunc);
 
+        // open the file for writing
+        // specify true if you want to append to the file or false if you wish
+        // to overwrite the file. be careful with this!
+        // make sure to call close() when you're done
+        // see operator<< for how to write a GTFSequence to the file
+        bool open_for_writing(bool append);
+        void close();
+
         // return a list of GTFSequences filtered by the given function.
         // this function can be a lambda: [](const auto& gtfseq) -> bool {...}
         std::vector<GTFSequence> filter(std::function<bool(const GTFSequence&)> filterfunc) const;
@@ -94,9 +102,12 @@ class GTFFile {
 
         std::vector<GTFSequence>& getall() { return sequences; }
 
+        GTFFile& operator<<(GTFSequence seq);
+
     private:
         std::string file;
         std::vector<GTFSequence> sequences;
+        std::ofstream outfile;
 
         bool next_sequence(std::ifstream&, GTFSequence&);
         static inline std::string& trim(std::string& str);
@@ -231,6 +242,41 @@ inline std::string& GTFFile::sanitize_attr_value(std::string& value) {
 
 inline bool GTFFile::valid_line(const std::string& line) {
     return std::regex_search(line, valid_gtf_line_regex);
+}
+
+bool GTFFile::open_for_writing(bool append) {
+    if (outfile) {
+        this->close();
+    }
+    outfile.open(file, std::ios_base::out | (append ? std::ios_base::app : std::ios_base::trunc));
+    return (bool)outfile;
+}
+
+void GTFFile::close() {
+    outfile.close();
+}
+
+GTFFile& GTFFile::operator<<(GTFSequence seq) {
+    if (outfile) {
+        outfile << seq.seqname << '\t'
+                << seq.source << '\t'
+                << seq.feature << '\t'
+                << seq.start << '\t'
+                << seq.end << '\t'
+                << ((seq.score == NO_SCORE) ? '.' : seq.score) << '\t'
+                << seq.strand << '\t'
+                << ((seq.frame == -1) ? '.' : seq.frame);
+        if (seq.attributes.size()) {
+            outfile << '\t';
+            for (auto& [key, val] : seq.attributes) {
+                outfile << key << " \"" << val << "\"; ";
+            }
+        }
+        outfile << "\r\n"; // use CRLF because Windows users/network standards
+    } else {
+        throw GTFError("GTFFile::operator<<: Error writing to file!");
+    }
+    return *this;
 }
 
 #endif /* GTF_PARSER_H */
