@@ -262,10 +262,18 @@ GTFFile& GTFFile::operator<<(GTFSequence seq) {
                 << seq.source << '\t'
                 << seq.feature << '\t'
                 << seq.start << '\t'
-                << seq.end << '\t'
-                << ((seq.score == NO_SCORE) ? '.' : seq.score) << '\t'
-                << seq.strand << '\t'
-                << ((seq.frame == -1) ? '.' : seq.frame);
+                << seq.end << '\t';
+        if (seq.score == NO_SCORE) {
+            outfile << '.' << '\t';
+        } else {
+            outfile << seq.score << '\t';
+        }
+        outfile << seq.strand << '\t';
+        if (seq.frame == -1) {
+            outfile << '.' << '\t';
+        } else {
+            outfile << seq.frame << '\t';
+        }
         if (seq.attributes.size()) {
             outfile << '\t';
             for (auto& [key, val] : seq.attributes) {
