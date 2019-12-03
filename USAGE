@@ -1,4 +1,4 @@
-HOW TO USE THIS CLASS
+HOW TO USE THIS CLASS TO READ A FILE
 
 These are the steps to open, load, and iterate through a GTF file:
   1. Make an instance of GTFFile
@@ -11,3 +11,14 @@ Extra functions:
   - You can get a filtered list of sequences from the file with the filter function
 
 For a more specific code example, see test/test.cpp.
+
+HOW TO USE THIS CLASS TO WRITE A FILE
+
+  1. Create an instance and set the filename
+  2. Use the open_for_writing function, specifying true if you wish to append
+     data to the file or false if you wish to overwrite the file.
+  3. Make a GTFSequence containing the data you wish to write
+  4. Use the class like any other iostream:
+       mygtffile << mygtfsequence << myothergtfsequence;
+  5. Use the close function to close the file after you are done writing to it
+
