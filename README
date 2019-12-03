@@ -2,6 +2,7 @@ WHAT IS THIS?
 
 This is a header-only parser for the GTF file format. If you are unaware of
 what that is, then this is almost certainly not meant for you.
+This class can read and write GTF files. See USAGE for more information.
 
 BUILDING
 
